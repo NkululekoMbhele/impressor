@@ -2,19 +2,48 @@ import React, {useState, useEffect} from 'react';
 import './App.css';
 import Navbar from './components/Navbar';
 import PreviousMap from 'postcss/lib/previous-map';
-import {db, storage} from "./firebase"
+import {db, storage, auth} from "./firebase"
 import {
   ref,
   uploadBytesResumable,
   getDownloadURL
 } from "firebase/storage";
 import axios from 'axios';
+import useLogin from './hooks/useLogin'
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 function App() {
   const [file, setFile] = useState(null)
   const [fileName, setFileName] = useState("")
   const [loading, setLoading] = useState(false)
   const [percent, setPercent] = useState(0)
+  const [user, setUser] = useState()
+  const [isOnline, setIsOnline] = useState(null);
+  const provider = new GoogleAuthProvider();
+
+  // Sign In Pop up initiator
+  const signInFunction = () => {
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential.accessToken;
+        // The signed-in user info.
+        const user = result.user;
+        console.log(user)
+        setUser(user);
+        // ...
+      }).catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
+  }
   const requestOptions   = {
     fileName: "Nkululeko",
   } 
@@ -44,7 +73,7 @@ function App() {
         });
       }
     );
-    axios.post('https://us-central1-nkululekodotio-2b22e.cloudfunctions.net/function-1', {fileName: file.name})
+    axios.post('https://europe-west1-nkululekoprojects-1353e.cloudfunctions.net/impressorBasic', {fileName: file.name})
       .then(response => console.log(response))
       .catch(function (error) {
         console.log(error);
@@ -54,6 +83,10 @@ function App() {
   const handleChange = (e) => {
     setFile(e.target.files[0])
     console.log(e.target.files[0])
+  }
+  const handleSignIn = () => {
+    console.log("Begin");
+    console.log(user);
   }
   return (
     <>
@@ -65,6 +98,7 @@ function App() {
               YOUR IMAGES TO RETAIN <br/>
               <span className="text-yellow-200">QUALLITY</span> WHEN POSTING <br/>
               ON <span className="text-yellow-200">SOCIAL MEDIA</span></h1> 
+            <button onClick={signInFunction}>Sign In</button>
           </div>
           <div className="action bg-white text-center flex flex-col justify-center items-center shadow-md md:w-1/2 px-12 md:py-4 md:mt-0 mt-6 h-full rounded-xl">
               <div className="header">
