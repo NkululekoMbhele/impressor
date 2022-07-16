@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write;
+    }
+  }
+}
+
+
+// rules_version = '2';
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /employeeDetails/{details} {
+//       allow read, write;
+//     }
+//      match /clientAccount/{details} {
+//       allow read, write;
+//     }
+//      match /messages/{messages} {
+//       allow read, write;
+//     }
+//     match /ourClients/{clients} {
+//       allow read;
+//     }
+//      match /packages/{packages} {
+//       allow read;
+//     }
+//       match /services/{services} {
+//       allow read;
+//     }
+//     match /services-name/{services} {
+//       allow read;
+//     }
+//     match /services/{services} {
+//       allow read;
+//     }
+//     match /suggestions/{suggestion} {
+//       allow read, write;
+//     }
+//     match /newsletter/{newsletter} {
+//       allow read, write;
+//     }
+//     match /freedom-promo-reminder-list/{user} {
+//       allow read, write;
+//     }
+//     match /voting-system/{votes} {
+//       allow read, write;
+//     }
+//      match /reviews/{review} {
+//       allow read, write;
+//     }
+//      match /gallery/{document=**} {
+//       allow read, write: if true;
+//     }
+//   }
+// }
+
