@@ -11,6 +11,7 @@ import {
 import axios from 'axios';
 import useLogin from './hooks/useLogin'
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import download from 'downloadjs'
 
 function App() {
   const [file, setFile] = useState(null)
@@ -27,61 +28,44 @@ function App() {
   } 
   const delay = ms => new Promise(res => setTimeout(res, ms));
   const downloadFinal = async () => {
-    console.log("Before")
-    await delay(12000)
-    getDownloadURL(ref(storage, `/impressor/images/impressored_${file.name}`))
-        .then((url) => {
-          // `url` is the download URL for 'images/stars.jpg'
-          console.log(url);
-          setDownloadLink(url);
-          // This can be downloaded directly:
-          // const xhr = new XMLHttpRequest();
-          // xhr.responseType = 'blob';
-          // xhr.onload = (event) => {
-          //   const blob = xhr.response;
-          // };
-          // xhr.open('GET', url);
-          // xhr.send();
-
-          // Or inserted into an <img> element
-          // const img = document.getElementById('myimg');
-          // img.setAttribute('src', url);
-          console.log("Function Done");
-          setProcessState("download")
-        })
-        .catch((error) => {
-          // Handle any errors
-        });
-    console.log("After")
-    setLoading(false);
+    setProcessState("loading")
+    const res = await fetch(`http://localhost:8080/download?filename=${file.name}`);
+    const blob = await res.blob();
+    download(blob, file.name);
+    setProcessState("start")
   }
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProcessState("loading")
     setLoading(true);
-    const storageRef = ref(storage, `/impressor/images/${file.name}`)
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const tempPercent = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-        // update progress
-        console.log(tempPercent);
-        setPercent(tempPercent);
-      },
-      (err) => console.log(err),
-      () => {
-        // download url
-        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
-          console.log(url);
-          setIsDoneUploading(true)
-          downloadFinal()
-        });
-      }
-    );
-  }
+    let formData = new FormData();
+    formData.append("file", file);
+    const api  = (dev) => { return (!dev==="dev") ? "https://nkululekoprojects-1353e.ew.r.appspot.com/upload" : "http://localhost:8080/upload"; }
+    let url = api("dev")
+    try {
+      const response = await axios.post(
+        url,
+        formData
+      );
+      console.log(response.data);
+      
+      setLoading(false)
+      setProcessState('download')
+      // const fileURL = window.URL.createObjectURL(new Blob([response.data]));
+      // const fileLink = document.createElement('a');
+      // fileLink.href = fileURL;
+      // const newFileName = "filename.jpg";
+      // fileLink.setAttribute('download', newFileName);
+      // fileLink.setAttribute('target', '_blank');
+      // document.body.appendChild(fileLink);
+      // fileLink.click();
+      // fileLink.remove();
+    } catch (ex) {
+      console.log(ex);
+      setProcessState('start')
+    }
+    // downloadFinal()
+    }
     const handleChange = (e) => {
       setFile(e.target.files[0])
       console.log(e.target.files[0])
@@ -106,7 +90,7 @@ function App() {
     } else if (processState === 'start') {
       return <UploadImage handleSubmit={handleSubmit} handleChange={handleChange} file={file} />
     } else if (processState === 'download') {
-      return <Download downloadUrl={downloadLink}/>
+      return <Download downloadUrl={downloadLink} downloadFinal={downloadFinal} />
     }
   }
 
@@ -121,7 +105,7 @@ function App() {
               <span className="text-yellow-200">QUALLITY</span> WHEN POSTING <br/>
               ON <span className="text-yellow-200">SOCIAL MEDIA</span></h1> 
             {/* <button onClick={signInFunction}>Sign In</button> */}
-            <button onClick={sendToSever}>Send</button>
+            {/* <button onClick={sendToSever}>Send</button> */}
           </div>
           <div className="action bg-white text-center flex flex-col justify-center items-center shadow-md md:w-1/2 px-12 md:py-4 md:mt-0 mt-6 h-full rounded-xl">
               <div className="header">
@@ -170,17 +154,17 @@ const Download = (props) => {
       <div className="upload w-full justify-center" onSubmit={props.handleSubmit}>
         <img src={props.dowloadUrl} className="w-full h-auto" alt="" />
 
-        <a className="mt-8 text-white bg-gradient-to-l w-full delay-1.5 cursor-pointer from-blue-300 via-blue-400 rounded py-2 px-6 font-semibold to-blue-500" href={props.downloadUrl} download>DOWNLOAD IMAGE</a>
+        <button onClick={props.downloadFinal} className="mt-8 text-white bg-gradient-to-l w-full delay-1.5 cursor-pointer from-blue-300 via-blue-400 rounded py-2 px-6 font-semibold to-blue-500" >DOWNLOAD IMAGE</button>
       </div>
     </>
   )
 }
 
-const Loading = (props) => {
+const Loading = () => {
   return (
     <>
       <div className="flex flex-col items-center justify-center">
-        <svg className="animate-spin -ml-1 mr-3 md:h-12 md:w-12 w-8 h-8 text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <svg className="animate-spin -ml-1 mr-3 md:h-12 md:w-12 w-8 h-8 text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         <h2 className="text-center text-blue-500 text-xl font-semibold mt-4">Impressoring...</h2>
       </div>
     </>
